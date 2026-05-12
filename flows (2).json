@@ -1,0 +1,597 @@
+[
+    {
+        "id": "eb8268d91c703453",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "db2a6c26476f1c4f",
+        "type": "json",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": true,
+        "x": 230,
+        "y": 20,
+        "wires": [
+            [
+                "6a3c45a4781ec02a"
+            ]
+        ]
+    },
+    {
+        "id": "6a3c45a4781ec02a",
+        "type": "function",
+        "z": "eb8268d91c703453",
+        "name": "function validacion",
+        "func": "// Verificamos que msg.payload y msg.payload.data existan para evitar el TypeError\nif (msg.payload && msg.payload.data) {\n    \n    // Creamos el objeto limpio solo si hay datos\n    msg.payload = {\n        estacion: msg.payload.estacion || \"Nodo_01\",\n        temperatura: msg.payload.data.temp,\n        humedad: msg.payload.data.hum,\n        lluvia: msg.payload.data.precip,\n        timestamp: new Date() // Generamos el tiempo aquí mismo para tu tesis\n    };\n    \n    return msg;\n} else {\n    // Si no hay datos válidos, detenemos el flujo para que no marque error\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 130,
+        "y": 100,
+        "wires": [
+            [
+                "d606301004f6d64e",
+                "1e097d9eb7a44c7b"
+            ]
+        ]
+    },
+    {
+        "id": "7aac34283b3b8e04",
+        "type": "function",
+        "z": "eb8268d91c703453",
+        "name": "function SQL",
+        "func": "// 1. Extraemos los valores\nvar estacion = String(msg.payload.estacion || \"Nodo_01\").trim();\nvar temp     = parseFloat(msg.payload.temperatura) || 0;\nvar hum      = parseFloat(msg.payload.humedad) || 0;\nvar precip   = parseFloat(msg.payload.lluvia) || 0;\n\n// 2. Construimos la instrucción SQL directamente como un solo texto\n// Usamos CURRENT_TIMESTAMP para que la base de datos ponga la hora exacta\nvar comandoSQL = \"INSERT INTO public.lecturas_clima (estacion, temperatura, humedad, precipitacion, fecha_registro) \" + \n                 \"VALUES ('\" + estacion + \"', \" + temp + \", \" + hum + \", \" + precip + \", CURRENT_TIMESTAMP) RETURNING *;\";\n\n// 3. Le pasamos el texto directamente al nodo (en ambas variables para asegurar)\nmsg.payload = comandoSQL;\nmsg.query = comandoSQL;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "4ce1edd8d4b3b284"
+            ]
+        ]
+    },
+    {
+        "id": "4ce1edd8d4b3b284",
+        "type": "postgresql",
+        "z": "eb8268d91c703453",
+        "name": "TesisDB",
+        "query": "select * from lecturas_clima",
+        "postgreSQLConfig": "f2a92da0dde5aee4",
+        "split": false,
+        "rowsPerMsg": 1,
+        "outputs": 1,
+        "x": 580,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e427cf131c2a50ca",
+        "type": "debug",
+        "z": "eb8268d91c703453",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "78980512d3890dfe",
+        "type": "serial in",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "serial": "283790f63fb24f6f",
+        "x": 70,
+        "y": 20,
+        "wires": [
+            [
+                "db2a6c26476f1c4f"
+            ]
+        ]
+    },
+    {
+        "id": "5a6b533944d1b218",
+        "type": "ui-gauge",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "group": "caa0b5908e94fe4d",
+        "order": 3,
+        "value": "payload",
+        "valueType": "msg",
+        "width": 3,
+        "height": 3,
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "Temperatura",
+        "alwaysShowTitle": false,
+        "floatingTitlePosition": "top-left",
+        "units": "°C",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "-10",
+                "color": "#7988d2",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "15",
+                "color": "#ffc800",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "30",
+                "color": "#ea5353",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": "-10",
+        "max": "50",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 110,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e76731835687c926",
+        "type": "ui-chart",
+        "z": "eb8268d91c703453",
+        "group": "caa0b5908e94fe4d",
+        "name": "",
+        "label": "chart",
+        "order": 4,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "",
+        "xAxisPropertyType": "timestamp",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "auto",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "",
+        "yAxisProperty": "payload",
+        "yAxisPropertyType": "msg",
+        "ymin": "",
+        "ymax": "",
+        "bins": 10,
+        "action": "append",
+        "stackSeries": false,
+        "pointShape": "circle",
+        "pointRadius": 4,
+        "showLegend": true,
+        "removeOlder": "2",
+        "removeOlderUnit": "1",
+        "removeOlderPoints": "",
+        "colors": [
+            "#0095ff",
+            "#ff0000",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": 6,
+        "height": 8,
+        "className": "",
+        "interpolation": "linear",
+        "x": 350,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3bc95449c39eabb3",
+        "type": "function",
+        "z": "eb8268d91c703453",
+        "name": "function temp",
+        "func": "var temp = parseFloat(msg.payload.temperatura);\n\n// REGLA: Solo aceptar valores entre -10 y 50 grados (rango climático normal)\nif (temp >= -10 && temp <= 50) {\n    msg.payload = temp;\n    return msg;\n} else {\n    // Si el valor es loco (ej. 500), el sistema lo ignora y no guarda basura\n    node.warn(\"Valor de temperatura fuera de rango: \" + temp);\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 140,
+        "y": 180,
+        "wires": [
+            [
+                "5a6b533944d1b218",
+                "e76731835687c926"
+            ]
+        ]
+    },
+    {
+        "id": "cd3d1bfd0d477b66",
+        "type": "function",
+        "z": "eb8268d91c703453",
+        "name": "function hum",
+        "func": "var hum = parseFloat(msg.payload.humedad);\n\n// REGLA: Solo aceptar valores entre 0 y 100 porcintos (rango climático normal)\nif (hum >= 0 && hum <= 100) {\n    msg.payload = hum;\n    return msg;\n} else {\n    // Si el valor es loco (ej. 200), el sistema lo ignora y no guarda basura\n    node.warn(\"Valor de humedad  fuera de rango: \" + hum);\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 510,
+        "y": 160,
+        "wires": [
+            [
+                "6c9796e2ea4725d9",
+                "e76731835687c926"
+            ]
+        ]
+    },
+    {
+        "id": "add45450f1b1ba00",
+        "type": "function",
+        "z": "eb8268d91c703453",
+        "name": "function precip",
+        "func": "var precip = parseFloat(msg.payload.lluvia);\n\n// REGLA: La precipitación no puede ser negativa y 500mm es un límite de lluvia extrema\nif (precip >= 0 && precip <= 500) {\n    msg.payload = precip;\n    msg.topic = \"Precipitación\";\n    return msg;\n} else {\n    // Si el sensor envía un valor loco (ej. un pico de interferencia de 2000)\n    node.warn(\"Ruido detectado en sensor de lluvia: \" + precip);\n    return null;\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 320,
+        "wires": [
+            [
+                "50d4554caa7a6009",
+                "e76731835687c926"
+            ]
+        ]
+    },
+    {
+        "id": "6c9796e2ea4725d9",
+        "type": "ui-gauge",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "group": "caa0b5908e94fe4d",
+        "order": 2,
+        "value": "payload",
+        "valueType": "msg",
+        "width": 3,
+        "height": 3,
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "Humedad",
+        "alwaysShowTitle": false,
+        "floatingTitlePosition": "top-left",
+        "units": "%",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#5cd65c",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "50",
+                "color": "#ffc800",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "65",
+                "color": "#ea5353",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": 0,
+        "max": "100",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 560,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "50d4554caa7a6009",
+        "type": "ui-gauge",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "group": "caa0b5908e94fe4d",
+        "order": 1,
+        "value": "payload",
+        "valueType": "msg",
+        "width": 3,
+        "height": 3,
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "Precipitaciones",
+        "alwaysShowTitle": false,
+        "floatingTitlePosition": "top-left",
+        "units": "mm",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#5cd65c",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "150",
+                "color": "#00b3ff",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "230",
+                "color": "#ea5353",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": 0,
+        "max": "500",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 520,
+        "y": 380,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "d606301004f6d64e",
+        "type": "delay",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "30",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "30",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 280,
+        "y": 360,
+        "wires": [
+            [
+                "3bc95449c39eabb3",
+                "cd3d1bfd0d477b66",
+                "add45450f1b1ba00"
+            ]
+        ]
+    },
+    {
+        "id": "1e097d9eb7a44c7b",
+        "type": "delay",
+        "z": "eb8268d91c703453",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "30",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 380,
+        "y": 60,
+        "wires": [
+            [
+                "7aac34283b3b8e04"
+            ]
+        ]
+    },
+    {
+        "id": "f2a92da0dde5aee4",
+        "type": "postgreSQLConfig",
+        "name": "Tesis",
+        "host": "127.0.0.1",
+        "hostFieldType": "str",
+        "port": "5432",
+        "portFieldType": "num",
+        "database": "tesis",
+        "databaseFieldType": "str",
+        "ssl": "false",
+        "sslFieldType": "bool",
+        "applicationName": "",
+        "applicationNameType": "str",
+        "max": 10,
+        "maxFieldType": "num",
+        "idle": 1000,
+        "idleFieldType": "num",
+        "connectionTimeout": 10000,
+        "connectionTimeoutFieldType": "num",
+        "user": "postgres",
+        "userFieldType": "str",
+        "password": "1234",
+        "passwordFieldType": "str"
+    },
+    {
+        "id": "283790f63fb24f6f",
+        "type": "serial-port",
+        "name": "COM2",
+        "serialport": "COM2",
+        "serialbaud": "9600",
+        "databits": 8,
+        "parity": "none",
+        "stopbits": 1,
+        "waitfor": "",
+        "dtr": "none",
+        "rts": "none",
+        "cts": "none",
+        "dsr": "none",
+        "newline": "\\n",
+        "bin": "false",
+        "out": "char",
+        "addchar": "",
+        "responsetimeout": 10000
+    },
+    {
+        "id": "caa0b5908e94fe4d",
+        "type": "ui-group",
+        "name": "Sensores en tiempo real",
+        "page": "b2f79ac9d0a2c0f3",
+        "width": 6,
+        "height": 1,
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "b2f79ac9d0a2c0f3",
+        "type": "ui-page",
+        "name": "Monitoreo Climatico",
+        "ui": "f1104c638c1cb931",
+        "path": "/page1",
+        "icon": "home",
+        "layout": "grid",
+        "theme": "1cc03d87159d87b4",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Small Desktop",
+                "px": "768",
+                "cols": "9"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": true,
+        "disabled": "false"
+    },
+    {
+        "id": "f1104c638c1cb931",
+        "type": "ui-base",
+        "name": "My Dashboard",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": true
+    },
+    {
+        "id": "1cc03d87159d87b4",
+        "type": "ui-theme",
+        "name": "Default Theme",
+        "colors": {
+            "surface": "#ffffff",
+            "primary": "#0094CE",
+            "bgPage": "#eeeeee",
+            "groupBg": "#ffffff",
+            "groupOutline": "#cccccc"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "e2d95d9f9a4436cd",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-postgresql": "0.15.4",
+            "node-red-node-serialport": "2.0.3",
+            "@flowfuse/node-red-dashboard": "1.30.2"
+        }
+    }
+]
